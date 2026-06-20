@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#FF8C00">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="K12学习助手">
+  <link rel="manifest" href="/manifest.json">
+  <!-- 配置后端API地址（部署到公网时取消注释并修改地址） -->
+  <!-- <meta name="api-base" content="https://k12-learning-api.onrender.com/api"> -->
+  <title>K12 学习助手</title>
+  <link rel="stylesheet" href="src/style.css">
+  <style>
+    @keyframes slideInRight {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+  </style>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
+</head>
+<body>
+  <!-- 启动屏 -->
+  <div id="splash">
+    <div class="sp-logo">📚</div>
+    <div class="sp-title">K12 学习助手</div>
+    <div class="sp-sub">正在加载...</div>
+  </div>
+
+  <!-- 页面容器 -->
+  <div id="app"></div>
+
+  <!-- Toast -->
+  <div id="toast"></div>
+
+  <!-- JS 加载顺序很重要 -->
+  <script src="src/data.js"></script>
+  <script src="src/core.js"></script>
+  <script src="src/core-api.js"></script>  <!-- API扩展：挂钩前端到后端API -->
+  <script src="src/pages/login.js"></script>
+  <script src="src/pages/onboard.js"></script>
+  <script src="src/pages/home.js"></script>
+  <script src="src/pages/knowledge.js"></script>
+  <script src="src/pages/quiz.js"></script>
+  <script src="src/pages/tools.js"></script>
+  <script src="src/pages/analysis.js"></script>
+  <script src="src/pages/profile.js"></script>
+  <!-- 教师页面 -->
+  <script src="src/pages/teacher.js"></script>
+  <script src="src/pages/teacher-student.js"></script>
+  <script src="src/pages/teacher-chapter.js"></script>
+  <script src="src/pages/teacher-task.js"></script>
+  <!-- 管理后台页面 -->
+  <script src="src/pages/admin.js"></script>
+  <script src="src/pages/admin-students.js"></script>
+  <script src="src/pages/admin-teachers.js"></script>
+  <script src="src/pages/admin-quiz.js"></script>
+  <script>
+    // 全局错误处理
+    window.addEventListener('error', function(e) {
+      console.error('[Global Error]', e.error || e.message);
+    });
+
+    // 注册 Service Worker（PWA离线支持）
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/sw.js').then(function(reg) {
+          console.log('[SW] Service Worker 已注册');
+        }).catch(function(e) {
+          console.log('[SW] 注册失败:', e);
+        });
+      });
+    }
+
+    // PWA 安装提示
+    var deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', function(e) {
+      e.preventDefault();
+      deferredPrompt = e;
+      // 显示安装按钮
+      setTimeout(function() {
+        if (deferredPrompt && App && App.state && App.state.loggedIn) {
+          var btn = document.createElement('div');
+          btn.id = 'pwa-install-btn';
+          btn.style.cssText = 'position:fixed;bottom:70px;right:16px;background:var(--primary);color:#fff;padding:10px 16px;border-radius:22px;font-size:13px;cursor:pointer;z-index:9999;box-shadow:0 2px 10px rgba(255,140,0,0.4);';
+          btn.innerHTML = '📲 安装APP';
+          btn.onclick = function() {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then(function() {
+              deferredPrompt = null;
+              btn.remove();
+            });
+          };
+          document.body.appendChild(btn);
+          // 10秒后自动消失
+          setTimeout(function() { if (btn.parentElement) btn.remove(); }, 10000);
+        }
+      }, 3000);
+    });
+  </script>
+</body>
+</html>

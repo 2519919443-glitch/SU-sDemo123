@@ -1,0 +1,204 @@
+// =============================================
+//  K12 学习助手 - 全局状态管理 & 工具函数
+//  所有变量挂在 window 上，供各页面 JS 调用
+// =============================================
+
+(function() {
+  'use strict';
+
+  // ---------- 全局状态 ----------
+  window.App = {
+    state: {},
+    defaultState: {
+      grade: '小学',
+      level: '三年级',
+      textbook: '人教版',
+      studyDays: 0,
+      totalMinutes: 0,
+      todayMinutes: 0,
+      streak: 0,
+      eyeProtect: false,
+      fontSize: 16,
+    },
+
+    // 初始化
+    init: function() {
+      console.log('[App] init start');
+      // 先检查登录状态
+      var curUser = localStorage.getItem('xuexi_cur_user');
+      if (curUser) {
+        try {
+          var users = JSON.parse(localStorage.getItem('xuexi_users') || '{}');
+          if (users[curUser]) {
+            this.state = Object.assign({}, this.defaultState, users[curUser]);
+            this.state.loggedIn = true;
+            this.state.username = curUser;
+          } else {
+            this.state = Object.assign({}, this.defaultState);
+          }
+        } catch(e) {
+          this.state = Object.assign({}, this.defaultState);
+        }
+      } else {
+        this.state = Object.assign({}, this.defaultState);
+      }
+      this.applyTheme();
+      this.applyFontSize();
+      // 判断是否已登录
+      if (!this.state.loggedIn) {
+        setTimeout(function() { Router.go('login'); }, 100);
+      } else if (!this.state.grade || this.state.grade === '') {
+        setTimeout(function() { Router.go('onboard'); }, 100);
+      } else {
+        setTimeout(function() { Router.go('home'); }, 100);
+      }
+      console.log('[App] init done, loggedIn:', this.state.loggedIn, 'grade:', this.state.grade);
+    },
+
+    // 用户登录
+    login: function(username, password) {
+      var users = JSON.parse(localStorage.getItem('xuexi_users') || '{}');
+      if (!users[username] || users[username].password !== password) {
+        return { ok: false, msg: '用户名或密码错误' };
+      }
+      localStorage.setItem('xuexi_cur_user', username);
+      this.state = Object.assign({}, this.defaultState, users[username]);
+      this.state.loggedIn = true;
+      this.state.username = username;
+      this.applyTheme();
+      this.applyFontSize();
+      return { ok: true };
+    },
+
+    // 用户注册
+    register: function(username, password, nickname) {
+      var users = JSON.parse(localStorage.getItem('xuexi_users') || '{}');
+      if (users[username]) {
+        return { ok: false, msg: '用户名已存在' };
+      }
+      users[username] = {
+        password: password,
+        nickname: nickname || username,
+        avatar: '',
+        grade: '',
+        level: '',
+        textbook: '人教版',
+        studyDays: 0,
+        totalMinutes: 0,
+        todayMinutes: 0,
+        streak: 0,
+        eyeProtect: false,
+        fontSize: 16,
+        createdAt: new Date().toISOString()
+      };
+      localStorage.setItem('xuexi_users', JSON.stringify(users));
+      return { ok: true };
+    },
+
+    // 退出登录
+    logout: function() {
+      localStorage.removeItem('xuexi_cur_user');
+      this.state = Object.assign({}, this.defaultState);
+      this.hideSplash();
+      Router.go('login');
+    },
+
+    // 保存用户数据到 users 表
+    saveUser: function() {
+      if (!this.state.username) return;
+      var users = JSON.parse(localStorage.getItem('xuexi_users') || '{}');
+      // 只保存非运行时状态
+      var saveData = {};
+      for (var k in this.state) {
+        if (k !== 'loggedIn' && k !== 'username') saveData[k] = this.state[k];
+      }
+      users[this.state.username] = saveData;
+      localStorage.setItem('xuexi_users', JSON.stringify(users));
+    },
+
+    // 保存状态
+    save: function() {
+      localStorage.setItem('xuexi_user', JSON.stringify(this.state));
+    },
+
+    // 应用学段主题
+    applyTheme: function() {
+      var grade = this.state.grade || '小学';
+      document.body.setAttribute('data-grade', grade);
+    },
+
+    // 应用字体大小
+    applyFontSize: function() {
+      var size = this.state.fontSize || 16;
+      document.documentElement.style.fontSize = size + 'px';
+    },
+
+    // 隐藏启动屏
+    hideSplash: function() {
+      var el = document.getElementById('splash');
+      if (el) {
+        el.style.opacity = '0';
+        setTimeout(function() {
+          el.style.display = 'none';
+          el.style.zIndex = '-1';
+        }, 400);
+      }
+      // 显示 tabbar（如果已登录且不在登录页）
+      var tabbar = document.getElementById('tabbar');
+      if (tabbar && App.state.loggedIn && Router && Router.current !== 'login' && Router.current !== 'onboard') {
+        tabbar.style.display = 'flex';
+      }
+    },
+
+    // 获取今日日期字符串
+    todayStr: function() {
+      var d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    },
+  };
+
+  // ---------- 工具函数 ----------
+  window.Utils = {
+    // 显示提示
+    toast: function(msg, duration) {
+      duration = duration || 2000;
+      var el = document.getElementById('toast');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'toast';
+        el.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.7);color:#fff;padding:8px 18px;border-radius:20px;font-size:14px;z-index:9999;transition:opacity 0.3s;pointer-events:none;';
+        document.body.appendChild(el);
+      }
+      el.textContent = msg;
+      el.style.opacity = '1';
+      el.style.display = 'block';
+      clearTimeout(this._toastTimer);
+      this._toastTimer = setTimeout(function() {
+        el.style.opacity = '0';
+        setTimeout(function() { el.style.display = 'none'; }, 300);
+      }, duration);
+    },
+
+    // 格式化时间
+    fmtMinutes: function(m) {
+      if (m < 60) return m + '分钟';
+      var h = Math.floor(m / 60);
+      var rm = m % 60;
+      return h + '小时' + (rm > 0 ? rm + '分钟' : '');
+    },
+
+    // 过滤数组（兼容旧浏览器）
+    filterByGrade: function(arr, grade) {
+      if (!arr || !arr.length) return [];
+      var result = [];
+      for (var i = 0; i < arr.length; i++) {
+        if (!arr[i].grade || arr[i].grade === grade || arr[i].grade === undefined) {
+          result.push(arr[i]);
+        }
+      }
+      return result;
+    },
+  };
+
+  console.log('[app.js] loaded');
+})();

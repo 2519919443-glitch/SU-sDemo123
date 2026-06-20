@@ -1,0 +1,16 @@
+{
+  "name": "k12-learning-app",
+  "version": "1.0.0",
+  "description": "K12学习助手 - 支持多用户并发的在线学习平台",
+  "main": "backend/server.py",
+  "scripts": {
+    "start": "python backend/server.py",
+    "dev": "python backend/server.py"
+  },
+  "keywords": ["education", "k12", "learning"],
+  "author": "Your Name",
+  "license": "MIT",
+  "engines": {
+    "python": ">=3.8"
+  }
+}

@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: k12-learning-api
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: cd backend && python server.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: PORT
+        value: 10000
+   计划ne:
+      - branch: main
+        provider: github
+        autoDeploy: true

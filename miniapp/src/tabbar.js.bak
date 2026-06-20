@@ -1,0 +1,25 @@
+// =============================================
+//  K12 学习助手 - 底部 Tab 栏渲染 & 路由联动
+// =============================================
+
+function renderTabBar(activePage) {
+  // 登录页和引导页不显示 tabbar
+  var hidePages = ['login', 'onboard', 'register', 'knowledge-detail'];
+  if (hidePages.indexOf(activePage) !== -1) {
+    return '';
+  }
+  var tabs = [
+    { id: 'home',      icon: '🏠', label: '首页' },
+    { id: 'knowledge', icon: '📖', label: '学习' },
+    { id: 'quiz',      icon: '✏️', label: '题库' },
+    { id: 'tools',     icon: '🔧', label: '工具' },
+  ];
+  var html = '<nav id="tabbar" style="position:fixed;bottom:0;left:0;right:0;height:60px;background:#fff;display:flex;border-top:1px solid #eee;z-index:100;">';
+  tabs.forEach(function(tab) {
+    var isActive = tab.id === activePage ? ' active' : '';
+    var color = isActive ? '#1976D2' : '#999';
+    html += '<div class="tab-item' + isActive + '" data-page="' + tab.id + '" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;color:' + color + ';font-size:11px;gap:2px;"><div class="tab-icon" style="font-size:22px;">' + tab.icon + '</div><div class="tab-label">' + tab.label + '</div></div>';
+  });
+  html += '</nav>';
+  return html;
+}
